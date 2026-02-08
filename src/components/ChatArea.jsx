@@ -10,22 +10,38 @@ const ChatArea = ({ chatId }) => {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    if (chatId) {
-      const fetched = window.electronAPI.getMessages(chatId);
-      setMessages(fetched);
-    }
+    let isMounted = true;
+    const loadMessages = async () => {
+      if (!chatId) {
+        if (isMounted) {
+          setMessages([]);
+        }
+        return;
+      }
+      const fetched = await window.electronAPI.getMessages(chatId);
+      if (isMounted) {
+        setMessages(fetched);
+      }
+    };
+    loadMessages();
+    return () => {
+      isMounted = false;
+    };
   }, [chatId]);
 
   const handleSend = async (content) => {
+    if (!chatId) return;
     setIsTyping(true);
     // Simulate typing delay (1-2s)
     await new Promise((resolve) => setTimeout(resolve, 1500));
     const result = await window.electronAPI.sendMessage({ chatId, content });
     if (result.success) {
-      const updated = window.electronAPI.getMessages(chatId);
+      const updated = await window.electronAPI.getMessages(chatId);
       setMessages(updated);
       setIsTyping(false);
+      return;
     }
+    setIsTyping(false);
   };
 
   useEffect(() => {

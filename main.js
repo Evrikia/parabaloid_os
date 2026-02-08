@@ -39,6 +39,7 @@ db.exec(`
 let currentUserId = null;
 
 let mainWindow;
+let isQuitting = false;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -58,6 +59,7 @@ function createWindow() {
 
   // Handle close event for exit security
   mainWindow.on('close', async (event) => {
+    if (isQuitting) return;
     event.preventDefault();
     mainWindow.webContents.send('show-exit-modal');
   });
@@ -105,10 +107,17 @@ ipcMain.handle('login', async (_, { username, password }) => {
 // Exit confirmation
 ipcMain.handle('confirm-exit', async (_, password) => {
   try {
+    if (!currentUserId) {
+      return { success: false, error: 'No active session' };
+    }
     const stmt = db.prepare('SELECT password FROM users WHERE id = ?');
     const user = stmt.get(currentUserId);
+    if (!user) {
+      return { success: false, error: 'User not found' };
+    }
     const match = await bcrypt.compare(password, user.password);
     if (match) {
+      isQuitting = true;
       mainWindow.destroy();  // Allow close
       app.quit();
       return { success: true };

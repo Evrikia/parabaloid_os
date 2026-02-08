@@ -5,23 +5,34 @@ const useChats = () => {
   const [chats, setChats] = useState([]);
 
   useEffect(() => {
-    const fetched = window.electronAPI.getChats();
-    setChats(fetched);
+    let isMounted = true;
+    const loadChats = async () => {
+      const fetched = await window.electronAPI.getChats();
+      if (isMounted) {
+        setChats(fetched);
+      }
+    };
+    loadChats();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const createChat = (name) => {
-    const newChat = window.electronAPI.createChat(name);
-    setChats([newChat, ...chats]);
+  const createChat = async (name) => {
+    const newChat = await window.electronAPI.createChat(name);
+    setChats((current) => [newChat, ...current]);
   };
 
-  const deleteChat = (id) => {
-    window.electronAPI.deleteChat(id);
-    setChats(chats.filter((c) => c.id !== id));
+  const deleteChat = async (id) => {
+    await window.electronAPI.deleteChat(id);
+    setChats((current) => current.filter((c) => c.id !== id));
   };
 
-  const renameChat = (data) => {
-    window.electronAPI.renameChat(data);
-    setChats(chats.map((c) => (c.id === data.id ? { ...c, name: data.newName } : c)));
+  const renameChat = async (data) => {
+    await window.electronAPI.renameChat(data);
+    setChats((current) =>
+      current.map((c) => (c.id === data.id ? { ...c, name: data.newName } : c))
+    );
   };
 
   return { chats, createChat, deleteChat, renameChat };

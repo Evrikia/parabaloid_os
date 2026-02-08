@@ -11,5 +11,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   renameChat: (data) => ipcRenderer.invoke('rename-chat', data),
   getMessages: (chatId) => ipcRenderer.invoke('get-messages', chatId),
   sendMessage: (data) => ipcRenderer.invoke('send-message', data),
-  onShowExitModal: (callback) => ipcRenderer.on('show-exit-modal', callback),
+  onShowExitModal: (callback) => {
+    ipcRenderer.on('show-exit-modal', callback);
+    return () => ipcRenderer.removeListener('show-exit-modal', callback);
+  },
 });

@@ -14,7 +14,8 @@ function App() {
 
   useEffect(() => {
     // Listen for exit modal trigger from main process
-    window.electronAPI.onShowExitModal(() => setShowExitModal(true));
+    const cleanup = window.electronAPI.onShowExitModal(() => setShowExitModal(true));
+    return () => cleanup?.();
   }, []);
 
   const handleLogin = () => setIsLoggedIn(true);
